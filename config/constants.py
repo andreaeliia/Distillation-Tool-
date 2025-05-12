@@ -1,0 +1,2 @@
+TEMPERATURE = 0
+ALPHA = 0
