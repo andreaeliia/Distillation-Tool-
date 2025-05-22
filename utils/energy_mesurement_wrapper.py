@@ -1,7 +1,7 @@
 from codecarbon import EmissionsTracker
 from functools import wraps
 from ptflops import get_model_complexity_info
-from custom_logger import CustomLogger
+from utils.custom_logger import CustomLogger
 
 #Da usare come:
 # @with_emissions_tracking

@@ -1,4 +1,4 @@
-from singleton import singleton
+from utils.singleton import singleton
 
 @singleton
 class TaskDir:
