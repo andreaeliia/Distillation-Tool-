@@ -46,6 +46,18 @@ class BaseDatasetAdapter:
         # Applica il mapping al DataFrame
         self.apply_label_mapping()
 
+    def get_dataset_info(self):
+        """
+        NUOVO METODO: Ritorna informazioni essenziali del dataset
+        """
+        return {
+            'num_classes': len(self.label_to_idx),
+            'class_names': list(self.label_to_idx.keys()),
+            'label_mapping': self.label_to_idx,
+            'task_type': self.mode,  # "text", "image", "tabular"
+            'num_samples': len(self.df)
+        }
+
     def load_imagenet_mapping(self):
         """
         Carica il mapping ImageNet da file JSON
@@ -122,6 +134,7 @@ class BaseDatasetAdapter:
             return "text"
         else:
             return "tabular"
+
 
 
     def get_dataloader(self):
@@ -226,6 +239,62 @@ class BaseDatasetAdapter:
 
         return DataLoader(TabularDataset(self.df), batch_size=BATCH_SIZE, shuffle=True)
 
+    def get_generation_loader(self):
+        """
+        DataLoader specifico per text generation task
+        Assume che il dataset abbia input text nella prima colonna e target text nella seconda
+        """
+        if not self.tokenizer:
+            raise ValueError("Tokenizer is required for generation mode.")
+
+        class GenerationDataset(Dataset):
+            def __init__(self, df):
+                # Assumiamo che il dataset abbia input e target text
+                self.inputs = df.iloc[:, 0].astype(str).tolist()
+                self.targets = df.iloc[:, 1].astype(str).tolist()
+            
+            def __getitem__(self, idx):
+                return self.inputs[idx], self.targets[idx]
+            
+            def __len__(self):
+                return len(self.inputs)
+
+        def collate_fn(batch):
+            inputs, targets = zip(*batch)
+            
+            # Tokenize inputs
+            input_encoding = self.tokenizer(
+                list(inputs),
+                return_tensors="pt",
+                padding=True,
+                truncation=True,
+                max_length=512
+            )
+            
+            # Tokenize targets
+            target_encoding = self.tokenizer(
+                list(targets),
+                return_tensors="pt",
+                padding=True,
+                truncation=True,
+                max_length=512
+            )
+            
+            return {
+                'input_ids': input_encoding['input_ids'],
+                'attention_mask': input_encoding['attention_mask'],
+                'target_ids': target_encoding['input_ids'],
+                'target_attention_mask': target_encoding['attention_mask']
+            }
+
+        dataset = GenerationDataset(self.df)
+        return DataLoader(
+            dataset, 
+            batch_size=BATCH_SIZE, 
+            collate_fn=collate_fn,
+            shuffle=True
+        )
+
     def get_num_classes(self):
         """
         Ritorna il numero di classi
@@ -281,3 +350,12 @@ def create_imagenet_mapping_from_train_dir(train_dir, output_path):
     
     print(f"[INFO] Mapping ImageNet creato: {len(class_dirs)} classi -> {output_path}")
     return mapping_data
+
+
+def count_classes(csv_path):
+    """
+    Funzione helper veloce per contare classi senza creare adapter
+    """
+    import pandas as pd
+    df = pd.read_csv(csv_path)
+    return len(df.iloc[:, 1].unique())

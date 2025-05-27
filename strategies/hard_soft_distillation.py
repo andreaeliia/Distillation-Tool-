@@ -16,7 +16,8 @@ class HardSoftDistillation(DistillationStrategy):
         optimizer = torch.optim.Adam(student_adapter.model.parameters(), lr=1e-4)
 
         for batch in tqdm(dataloader):
-            inputs, labels = batch  # <--- serve anche la label
+            inputs = {k: v.to(student_adapter.device) for k, v in batch.items() if k != 'labels'}
+            labels = batch['labels'].to(student_adapter.device)
             with torch.no_grad():
                 teacher_logits = teacher_adapter.predict_logits(inputs)
             student_logits = student_adapter.predict_logits(inputs)

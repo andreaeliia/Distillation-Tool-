@@ -4,7 +4,7 @@ from strategies.chunck_hard_soft_distillation import ChunkHardSoftDistillation
 
 class StrategyFactory:
     @staticmethod
-    def create_strategy(teacher_adapter, student_adapter, strategy_name="hard_soft", **kwargs):
+    def create_strategy(teacher_adapter, student_adapter, strategy_name, **kwargs):
         if strategy_name == "logits":
             return LogitsDistillation()
         elif strategy_name == "hard_soft":

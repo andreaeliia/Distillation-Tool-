@@ -48,7 +48,7 @@ class ChunkHardSoftDistillation(DistillationStrategy):
                         images = batch['image']
                         labels = batch.get('label', batch.get('labels'))
                     elif 'data' in batch:
-                        images = batch['data']home/delta-core/Scaricati/
+                        images = batch['data']
                         labels = batch.get('target', batch.get('labels'))
                     else:
                         keys = list(batch.keys())
