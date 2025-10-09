@@ -1,0 +1,40 @@
+@startuml Knowledge_Distillation_Framework_Sequence
+!theme blueprint
+skinparam BoxPadding 20
+
+actor User
+participant "main.py" as Main
+participant ProjectStructure
+participant DistillerBridge
+participant Adapter
+participant DataLoader
+participant ImageDataset
+
+Main -> ProjectStructure: Initialize Project Structure
+Main -> Main: Save pretrained models to local directory
+Main -> DistillerBridge: Initialize Distiller Bridge
+
+note right of DistillerBridge
+    Parameters:
+    teacher_path=teacher_model_path,
+    student_path=student_model_path,
+    dataset_path=distillation_csv_path,
+    distillation_strategy="chunked",
+    output_path=model_output_path
+end note
+
+DistillerBridge -> DistillerBridge: distill models
+DistillerBridge -> DataLoader: Identify task type ["image_classification", "text_classification", ...]
+opt Task Type: image_classification
+    DataLoader -> Adapter: Initialize Adapter for image classification
+    note right of Adapter
+        The adapter handles the decoupling of 
+        the dataset from the loading mechanism.
+        For example, it can convert a CSV file into 
+        a PyTorch Dataset or load the dataset from huggingface.
+    end note
+    DataLoader -> ImageDataset: Load image dataset, return torch DataLoader
+    ImageDataset -> DataLoader: Return DataLoader
+    DistillerBridge -> DistillerBridge: Perform distillation using defined strategy
+    DistillerBridge -> Main: Save distilled student model to output path
+end
